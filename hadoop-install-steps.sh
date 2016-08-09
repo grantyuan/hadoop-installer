@@ -1,24 +1,27 @@
 #!/bin/sh
-if [ '$1' == '' ] || [ '$2' == '' ] 
+MachineName=$1
+Master=$2
+
+if [ MachineName == null ] || [ Master == null ] 
 then
     echo "usage:"
     echo "hadoop-installer.sh YouMachineName MasterName"
     exit
 fi
 
-MachineName=$1
-# rename current machine
-echo $MachineName>/etc/hostname
 
-Master=$2
-UserDir=/home/$USER/
+# rename current machine
+ echo $MachineName>/etc/hostname
+
+
+UserDir=$(pwd)
 HadoopTempDir=$UserDir/dadoop/
 HadoopZipFileName=hadoop.tar.gz
 HadoopDownloadUrl="https://mirrors.tuna.tsinghua.edu.cn/apache/hadoop/common/hadoop-2.6.4/hadoop-2.6.4.tar.gz"
 
 [[ -d $HadoopTempDir ]] || mkdir $HadoopTempDir
 
-pusdd $HadoopTempDir\
+pushd $HadoopTempDir
 
 if ! [[ -f $HadoopZipFileName ]]; then
     #download hadoop
@@ -31,14 +34,14 @@ fi
 
 #create user hadoop
 getent passwd hadoop > /dev/null 2>&1
-if[ $? -ne 0 ]; then 
+if [ $? -ne 0 ]; then 
 addgroup hadoop
 adduser hadoop -ingroup hadoop hadoop
 
 password=0
 password1=1
 
-while $passwd != $password1 
+while [ $passwd != $password1 ]
 do
     echo "input password for hadoop:"
     read -s password
@@ -53,13 +56,13 @@ done
 passwd hadoop $passwd
 
 #   grant access right for hadoop
-cat /etc/sudoers | grep hadoop > /dev/null 2>&1
+cat /etc/ers | grep hadoop > /dev/null 2>&1
 
-if[ $? == 1 ] ; then
-# add "hadoop  ALL=(ALL:ALL) ALL" to file /etc/sudoers
+if [ $? == 1 ] ; then
+# add "hadoop  ALL=(ALL:ALL) ALL" to file /etc/ers
 sed -i '/root	ALL=(ALL:ALL) ALL/a \
 hadoop  ALL=(ALL:ALL) ALL\
-' /etc/sudoers
+' /etc/ers
 fi
 
 IfProcessInstalled(){
@@ -69,25 +72,26 @@ IfProcessInstalled(){
 
 
 # java versoin check func
-CheckJavaVersion(){
+CheckJavaVersion() { 
     IfProcessInstalled java
 
     if [ $? ] ; then
     # check java versoin
     java -version 2>&1 | grep '1.7\|1.8\|1.9' > /dev/null 2>&1
     if [ $? == 0 ]; then return 0; else return 1; fi
+    fi
 }
 
 CheckJavaVersion
 
 if [ !$? ]; then
 # uninstall java
-apt-get  purge java*
+ apt-get  purge java*
 
 # install jdk
 jdknotOk=true
 
-while [ '$jdknotOk'=true ] 
+while [ '$jdknotOk' = true ] 
 do
     echo "please download the jdk to current location, after downloading jdk to $(pwd), press Y to continue:"
     read line
@@ -99,18 +103,18 @@ do
     # check jdk installation package
     jdkfileName=$(find jdk* 2>&1 | grep -m 1 'jdk.*.tar.gz' 2>&1)
 
-    if[[ $jdkfileName != "jdk*.tar.gz" ]]; then
+    if [[ $jdkfileName != "jdk*.tar.gz" ]]; then
     # ask for jdk installation package
         continue
     else
-        $jdknotOk=false                    
+       jdknotOk=false                    
     fi
 done
 
 tar -xf $jdkfileName jdk
 # $jdkfileName
-mkdir usr/lib/jvm
-mv jdk /usr/lib/jvm/jdk
+ mkdir usr/lib/jvm
+ mv jdk /usr/lib/jvm/jdk
 
 if [ $? == 0 ]; then 
 # config java
@@ -128,23 +132,23 @@ if [ $? == 0 ]; then
     if [ '$javaConfig' == *'JAVA_HOME'* ]
     then
         # replace the new javahome
-        sed 's/export.*JAVA_HOME=.*'/'export JAVA_HOME=\/usr\/lib\/jvm\/jdk/g' /etc/profile
+           sed 's/export.*JAVA_HOME=.*'/'export JAVA_HOME=\/usr\/lib\/jvm\/jdk/g' /etc/profile
         # sed 's/export.*JAVA_HOME=.*'/'export JAVA_HOME=\/usr\/lib\/jvm\/jdk/g' /home/hadoop/.bashrc
         else
         # append java config
-        echo 'export JAVA_HOME=/usr/lib/jvm/jdk/' >> /etc/profile
-        echo 'export JRE_HOME=$JAVA_HOME/jre' >> /etc/profile
-        echo 'export CLASSPATH=.:${JAVA_HOME}/lib:${JRE_HOME}/lib' >> /etc/profile
+         echo 'export JAVA_HOME=/usr/lib/jvm/jdk/' >> /etc/profile
+         echo 'export JRE_HOME=$JAVA_HOME/jre' >> /etc/profile
+         echo 'export CLASSPATH=.:${JAVA_HOME}/lib:${JRE_HOME}/lib' >> /etc/profile
     fi
 
-    source /etc/profile
+     source /etc/profile
 
-    update-alternatives --install "/usr/bin/java" "java" "$JAVA_HOME/bin/java" 1
-    update-alternatives --install "/usr/bin/javac" "javac" "$JAVA_HOME/bin/javac" 1
-    update-alternatives --install "/usr/bin/javaws" "javaws" "$JAVA_HOME/bin/javaws" 1
-    update-alternatives --set java $JAVA_HOME/bin/java
-    update-alternatives --set javac $JAVA_HOME/bin/javac
-    update-alternatives --set javaws $JAVA_HOME/bin/javaws
+  update-alternatives --install "/usr/bin/java" "java" "$JAVA_HOME/bin/java" 1
+     update-alternatives --install "/usr/bin/javac" "javac" "$JAVA_HOME/bin/javac" 1
+     update-alternatives --install "/usr/bin/javaws" "javaws" "$JAVA_HOME/bin/javaws" 1
+     update-alternatives --set java $JAVA_HOME/bin/java
+     update-alternatives --set javac $JAVA_HOME/bin/javac
+     update-alternatives --set javaws $JAVA_HOME/bin/javaws
 
     # check java installation
     CheckJavaVersion
@@ -158,9 +162,9 @@ fi
 # install hadoop
 echo starting to install hadoop
 
-tar -xf $HadoopZipFileName -C /usr/local
-mv /usr/local/$HadoopZipFileName ./hadoop
-chown -R hadoop:hadoop ./hadoop
+ tar -xf $HadoopZipFileName -C /usr/local
+ mv /usr/local/$HadoopZipFileName ./hadoop
+ chown -R hadoop:hadoop ./hadoop
 
 # check version 
 /usr/local/hadoop/bin/hadoop version >/dev/null 2>&1
@@ -169,18 +173,18 @@ if ! [ $? ] ; then echo "Error unable to run hadoop version" > &2 ; exit; fi
 
 # change /usr/local/hadoop/etc/hadoop/hadoop_env.sh 
 # change the evn variable for hadoop_env.sh
-sed "s/.*JAVA_HOME=.*//g" /usr/local/hadoop/etc/hadoop/hadoop_env.sh
-sed "s/export.*HADOOP_CONF_DIR=.*/export HADOOP_CONF_DIR=/usr/local/hadoop/conf/"
-sed "s/export.*HADOOP_OPTS=.*/export HADOOP_OPTS=-Djava.net.preferIPv4Stack=true"
+ sed "s/.*JAVA_HOME=.*//g" /usr/local/hadoop/etc/hadoop/hadoop_env.sh
+ sed "s/export.*HADOOP_CONF_DIR=.*/export HADOOP_CONF_DIR=/usr/local/hadoop/conf/"
+ sed "s/export.*HADOOP_OPTS=.*/export HADOOP_OPTS=-Djava.net.preferIPv4Stack=true"
 
 cat /etc/profile | grep 'HADOOP_INSTALL' > /dev/null 2>&1
 if [ $? ] ; then
-    sed "s/.*HADOOP.*//g" 
-    sed "s/export .*HADOOP_INSTALL.*//g"
-    sed "s/export .*HADOOP_HOME.*//g"
+    sed "s/.*HADOOP.*//g" /etc/profile
+    sed "s/export .*HADOOP_INSTALL.*//g" /etc/profile
+    sed "s/export .*HADOOP_HOME.*//g" /etc/profile
 fi
 
-echo '#HADOOP\
+ echo '#HADOOP\
 export HADOOP_HOME=/usr/local/hadoop/\
 export HADOOP_INSTALL=$HADOOP_HOME\
 export PATH=$PATH:$HADOOP_INSTALL/bin\
@@ -213,11 +217,12 @@ if [ '$input' == 'y' ]; then
             192.168.0.1 slave1"
         
         read -a maping
-        echo ${maping[0]} ${maping[1]} >> /etc/hosts
+          echo ${maping[0]} ${maping[1]} >> /etc/hosts
         allSlaves[$count]=${maping[1]}
         let 'count++'
         echo "input more? press [Yes/No]"
         read input
+       
         if [ '$input' == 'n' ] 
         then
             break 
@@ -252,8 +257,8 @@ SwithUser(){
 # config ssh no password login
 
 if ! [[ -f /etc/init.d/ssh ]] ; then
-    apt-get install openssh-clients
-    apt-get install openssh-server
+     apt-get install openssh-clients
+     apt-get install openssh-server
     if ! [ $? ] ; then exit; fi
 
 fi
@@ -269,7 +274,7 @@ ssh-keygen -t rsa
 # todo check if the key has been created succssfully
 cat id_rsa.pub  >> authorized_keys
 
-chmod 600 authorized_keys
+ chmod 600 authorized_keys
 
 /etc/init.d/ssh restart
 
